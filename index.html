@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gayatri Mantra Reminder</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffffff">
+</head>
+<body>
+    <h1>Gayatri Mantra Reminder</h1>
+    <p>This app will notify you at sunrise to chant the Gayatri Mantra.</p>
+
+    <label for="notificationTime">Select time for the notification:</label>
+    <input type="time" id="notificationTime">
+    <button id="scheduleNotificationButton">Schedule Notification</button>
+
+    <p id="nextNotification"></p>
+
+    <script>
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+                console.log('Service Worker registered with scope:', registration.scope);
+
+                document.getElementById('scheduleNotificationButton').addEventListener('click', () => {
+                    const timeInput = document.getElementById('notificationTime').value;
+                    if (timeInput) {
+                        scheduleCustomNotification(timeInput, registration);
+                    } else {
+                        alert('Please select a time for the notification.');
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Service Worker registration failed:', error);
+            });
+        }
+
+        function scheduleCustomNotification(time, registration) {
+            const now = new Date();
+            const [hours, minutes] = time.split(':');
+            const notificationTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+
+            const timeUntilNotification = notificationTime - now;
+
+            if (timeUntilNotification > 0) {
+                setTimeout(() => {
+                    registration.showNotification("Gayatri Mantra Reminder", {
+                        body: "It's time to chant the Gayatri Mantra!",
+                        icon: '/icons/icon-192x192.png',
+                        vibrate: [100, 50, 100]
+                    }).then(() => {
+                        playNotificationSound();
+                    });
+                }, timeUntilNotification);
+
+                document.getElementById('nextNotification').textContent = `Next notification scheduled for: ${notificationTime.toLocaleTimeString()}`;
+            } else {
+                alert('The selected time has already passed today. Please choose a future time.');
+            }
+        }
+
+        function playNotificationSound() {
+            const audio = new Audio('/audio/notification.mp3');
+            audio.play();
+        }
+    </script>
+</body>
+</html>
