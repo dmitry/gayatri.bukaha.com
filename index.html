@@ -17,17 +17,40 @@
 
     <p id="nextNotification"></p>
 
+    <h2>Service Worker Debug Information</h2>
+    <div id="swStatus">
+        <p id="swState">Service Worker Status: Not Registered</p>
+        <p id="swError"></p>
+    </div>
+
     <script>
         if ('serviceWorker' in navigator && 'PushManager' in window) {
             navigator.serviceWorker.register('/service-worker.js')
             .then(registration => {
                 console.log('Service Worker registered with scope:', registration.scope);
+                updateSWStatus('Registered');
+
+                // Monitor the Service Worker's state
+                if (registration.installing) {
+                    updateSWState('Installing');
+                } else if (registration.waiting) {
+                    updateSWState('Installed');
+                } else if (registration.active) {
+                    updateSWState('Active');
+                }
+
+                registration.addEventListener('updatefound', () => {
+                    updateSWState('Update Found');
+                });
+
+                registration.installing?.addEventListener('statechange', () => {
+                    updateSWState(registration.installing.state);
+                });
 
                 // Request Notification Permission
                 Notification.requestPermission().then(permission => {
                     if (permission === 'granted') {
                         console.log('Notification permission granted.');
-
                         document.getElementById('scheduleNotificationButton').addEventListener('click', () => {
                             const timeInput = document.getElementById('notificationTime').value;
                             if (timeInput) {
@@ -44,9 +67,12 @@
             })
             .catch(error => {
                 console.error('Service Worker registration failed:', error);
+                updateSWStatus('Registration Failed');
+                document.getElementById('swError').textContent = `Error: ${error}`;
             });
         } else {
             alert('Your browser does not support service workers or push notifications.');
+            updateSWStatus('Not Supported');
         }
 
         function scheduleCustomNotification(time, registration) {
@@ -76,6 +102,14 @@
         function playNotificationSound() {
             const audio = new Audio('/audio/notification.mp3');
             audio.play();
+        }
+
+        function updateSWStatus(status) {
+            document.getElementById('swState').textContent = `Service Worker Status: ${status}`;
+        }
+
+        function updateSWState(state) {
+            document.getElementById('swState').textContent = `Service Worker State: ${state}`;
         }
     </script>
 </body>
