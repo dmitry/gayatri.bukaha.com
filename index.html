@@ -23,18 +23,30 @@
             .then(registration => {
                 console.log('Service Worker registered with scope:', registration.scope);
 
-                document.getElementById('scheduleNotificationButton').addEventListener('click', () => {
-                    const timeInput = document.getElementById('notificationTime').value;
-                    if (timeInput) {
-                        scheduleCustomNotification(timeInput, registration);
+                // Request Notification Permission
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        console.log('Notification permission granted.');
+
+                        document.getElementById('scheduleNotificationButton').addEventListener('click', () => {
+                            const timeInput = document.getElementById('notificationTime').value;
+                            if (timeInput) {
+                                scheduleCustomNotification(timeInput, registration);
+                            } else {
+                                alert('Please select a time for the notification.');
+                            }
+                        });
                     } else {
-                        alert('Please select a time for the notification.');
+                        alert('Notification permission denied. Please enable it in your browser settings.');
                     }
                 });
+
             })
             .catch(error => {
                 console.error('Service Worker registration failed:', error);
             });
+        } else {
+            alert('Your browser does not support service workers or push notifications.');
         }
 
         function scheduleCustomNotification(time, registration) {
